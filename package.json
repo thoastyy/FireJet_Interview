@@ -1,0 +1,24 @@
+{
+  "name": "firejet-assignment",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/parser": "^7.22.14",
+    "@babel/types": "^7.22.11",
+    "@types/babel__traverse": "^7.20.1",
+    "@types/node": "^20.5.7",
+    "prettier": "3.0.3",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "@babel/traverse": "^7.22.11"
+  }
+}
