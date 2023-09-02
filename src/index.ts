@@ -3,29 +3,51 @@ import * as fs from 'fs';
 import prettier from 'prettier';
 import * as t from "@babel/types";
 import _traverse from "@babel/traverse";
+import _generate from "@babel/generator";
 
 const traverse = _traverse.default; // from "@babel/traverse"
-
-// Parsing the sample file to get AST
-const pathExhibitA = "./texts/exhibitA.txt";
-const file = fs.readFileSync(pathExhibitA, 'utf-8');
-
-const ast = parse(file, {
-    sourceType: "module",
-    plugins: ["typescript"],
-});
+const generate = _generate.default; // from "@babel/generate"
 
 // Note: Only TemplateLiterals have quasis
-const getQuasi = (node : t.TemplateLiteral) : string => {
-    // console.log("++ first quasi",node.quasis[0]);
-    // TODO: consider the event when quasis[] > 1
-    return node.quasis[0].value.cooked; // TODO: consider raw or cooked (whats the diff even LOL)
+// Need to handle expressions and quasis such that they are in order --> generally: quasi, expression, quasi ...
+// Expression needs to use Babel generator to convert back to code
+const getQuasi = (node : t.TemplateLiteral, storeLiterals: string[]) => {
+    const tempStoreExp: string[] = [];
+    const tempStoreQuasi: string[] = [];
+    const merge: string[] = [];
+
+    // if there are both expressions and quasis:
+    if (node.expressions.length > 0) {
+        for (let i=0; i<node.quasis.length; i++) {
+            tempStoreQuasi.push(node.quasis[i].value.cooked)
+        }
+        for (let i=0; i<node.expressions.length; i++) {
+            tempStoreExp.push(generate(node.expressions[i]).code)
+        }
+
+        const maxLength = Math.max(tempStoreExp.length, tempStoreQuasi.length);
+
+        for (let i = 0; i < maxLength; i++) {
+            if (i < tempStoreQuasi.length) {
+                merge.push(tempStoreQuasi[i]);
+            }
+            if (i < tempStoreExp.length) {
+                merge.push(tempStoreExp[i]);
+            }
+        }
+
+        storeLiterals.push(merge.join(""));
+        merge.length = 0; // Clear the array
+
+    } else {
+        // only 1 quasi (and therefore no expressions)
+        storeLiterals.push(node.quasis[0].value.cooked);
+    }
+    
 }
 
 const checkTsxPrefix = (node:  t.TemplateLiteral) : boolean => {
-    if (node.leadingComments) {
-        const tsxPrefix = node.leadingComments[0].value // TODO: Iterate throught the leadingComments
-        // console.log(tsxPrefix)
+    if (node.leadingComments && node.leadingComments[0].value == "tsx") {
         return true;
     }
     return false;
@@ -37,14 +59,23 @@ async function lint(code: string) {
 };
 
 
-async function main(ast : t.File) {
+async function main() {
+
+    // Parsing the sample file to get AST
+    const pathExhibitA = "./texts/exhibitA.txt";
+    const file = fs.readFileSync(pathExhibitA, 'utf-8');
+
+    const ast = parse(file, {
+        sourceType: "module",
+        plugins: ["typescript"],
+    });
+
     // Traverse to find all the template literals prefixed with /*tsx*/
     let templateLiteralNodes : t.TemplateLiteral[] = []; // store all the nodes of type TemplateLiteral here
-    let result : string[] = [];
+    let result : string[] = []; // store all the strings
     
     traverse(ast, {
         enter(path) {
-        //   console.log(path.node);
         if (path.isTemplateLiteral()) {
             templateLiteralNodes.push(path.node);
         }}
@@ -55,13 +86,14 @@ async function main(ast : t.File) {
     
     // Append the strings to result[]
     for(let i=0; i<templateLiteralNodes.length; i++){
-        result.push(getQuasi(templateLiteralNodes[i]));
+        getQuasi(templateLiteralNodes[i], result);
     };
+    console.log(result);
       
     for (let i = 0; i < result.length; i++) {
-        const postLint = await lint(result[i]) // TODO: Need to replace original code
-        console.log("++ linted: ",postLint)
+        const postLint = await lint(result[i])
+        console.log(postLint)
     }
 };
 
-main(ast);
+main();
