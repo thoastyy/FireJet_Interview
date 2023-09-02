@@ -1,7 +1,6 @@
 # FireJet_Interview
-### Additional Questions
-[https://www.notion.so/Additional-Questions-fa712e1547774d56bbfdc4bb3e2e462d?pvs=4 ](https://garnet-guardian-ad4.notion.site/Additional-Questions-fa712e1547774d56bbfdc4bb3e2e462d?pvs=4)
-
+### Additional Questions[
+https://garnet-guardian-ad4.notion.site/Additional-Questions-fa712e1547774d56bbfdc4bb3e2e462d?pvs=4
 ### Run
 Install dependecies with `yarn install`.
 
