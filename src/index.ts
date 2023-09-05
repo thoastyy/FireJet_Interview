@@ -8,6 +8,7 @@ import _generate from "@babel/generator";
 const traverse = _traverse.default; // from "@babel/traverse"
 const generate = _generate.default; // from "@babel/generate"
 
+// NIU
 // Note: Only TemplateLiterals have quasis
 // Need to handle expressions and quasis such that they are in order --> generally: quasi, expression, quasi ...
 // Expression needs to use Babel generator to convert back to code
@@ -61,16 +62,16 @@ async function lint(code: string) {
 
 async function main() {
 
-    // Parsing the sample file to get AST
+    // 1. Parsing the sample file to get AST
     const pathExhibitA = "./texts/exhibitA.txt";
-    const file = fs.readFileSync(pathExhibitA, 'utf-8');
+    let file = fs.readFileSync(pathExhibitA, 'utf-8');
 
     const ast = parse(file, {
         sourceType: "module",
         plugins: ["typescript"],
     });
 
-    // Traverse to find all the template literals prefixed with /*tsx*/
+    // 2. Traverse to find all the template literals prefixed with /*tsx*/
     let templateLiteralNodes : t.TemplateLiteral[] = []; // store all the nodes of type TemplateLiteral here
     let result : string[] = []; // store all the strings
     
@@ -81,19 +82,39 @@ async function main() {
         }}
     });
     
-    // Filter out nodes that do NOT have /*tsx*/ prefix
+    // 3. Filter out nodes that do NOT have /*tsx*/ prefix
     templateLiteralNodes = templateLiteralNodes.filter((node) => checkTsxPrefix(node))
     
-    // Append the strings to result[]
-    for(let i=0; i<templateLiteralNodes.length; i++){
-        getQuasi(templateLiteralNodes[i], result);
-    };
-    console.log(result);
-      
-    for (let i = 0; i < result.length; i++) {
-        const postLint = await lint(result[i])
-        console.log(postLint)
+    // 4. Extract original code, lint and swap. Output in output.txt
+    interface pair { 
+        originalCode: string,
+        postLinted: string
     }
+    let pairs : pair[] = []; // need to store both original and linted code for replacement after iteration completion
+
+    for (const node of templateLiteralNodes) {
+
+        // Get string location using node.start and node.end 
+        // https://stackoverflow.com/questions/61325886/how-to-get-code-as-a-string-from-babel-node-during-traverse
+        try {
+            const originalCodeChunk = file.slice(node.start +1, node.end -1)    
+            const postLint = await lint(originalCodeChunk);
+            pairs.push(
+                {
+                    originalCode: originalCodeChunk,
+                    postLinted: postLint
+                }
+            );
+        } catch(error) {
+            return error instanceof Error ? "Failed to extract or lint.: "+ error.message : "Failed to extract or lint.";
+
+        }
+        for (let i =0; i< pairs.length; i++){
+            file = file.replace(pairs[i].originalCode, pairs[i].postLinted)
+        }
+    }
+    fs.writeFileSync("output/output.txt", file)
+    
 };
 
 main();

@@ -1,3 +1,91 @@
+import { SandpackBundlerFiles } from "@codesandbox/sandpack-client";
+
+import {
+  ARBITRARY_COMPONENT_FOLDER_PATH,
+  FIREJET_SAVE_DATA_PATH,
+} from "./SHIM_CONSTANTS";
+
+const saveFile = {
+  pages: {
+    main: {
+      componentData: [
+        {
+          type: "EXISTING_COMPONENT",
+          x: 100,
+          y: 400,
+          width: 300,
+          height: 400,
+          filePath: "/App.jsx",
+          exportName: "default",
+        },
+        {
+          type: "EXISTING_COMPONENT",
+          x: 700,
+          y: 0,
+          width: 500,
+          height: 100,
+          filePath: `${ARBITRARY_COMPONENT_FOLDER_PATH}/1/HelloWorld.js`,
+          exportName: "default",
+        },
+      ],
+    },
+  },
+  version: { major: 0, minor: 0, patch: 0 },
+};
+
+//TODO: Make sure all the processors are available here
+const packageJson = {
+  dependencies: {
+    react: "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-scripts": "^4.0.0",
+  },
+  main: "/index.js",
+  devDependencies: {},
+};
+
+export const DEFAULT_REACT_LOADING_FILES: SandpackBundlerFiles = {
+  "/App.tsx": {
+    code: /*tsx*/ `export default function App() {
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: "90vh",
+        overflow: "none",
+        display: "grid",
+        placeItems: "center",
+      }}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="72px"
+        height="72px"
+        viewBox="0 0 100 100"
+        enableBackground="new 0 0 0 0"
+      >
+        <path
+          fill="#24252C"
+          d="M73,50c0-12.7-10.3-23-23-23S27,37.3,27,50 M30.9,50c0-10.5,8.5-19.1,19.1-19.1S69.1,39.5,69.1,50"
+        >
+          <animateTransform
+            attributeName="transform"
+            attributeType="XML"
+            type="rotate"
+            dur="1s"
+            from="0 50 50"
+            to="360 50 50"
+            repeatCount="indefinite"
+          />
+        </path>
+      </svg>
+    </div>
+  );
+}
+`,
+  },
+};
+
 //TODO: Figure out why tailwind is so obsessed with compiling bg-[xyz] causing our compile to fail when the file is not there
 export const DEFAULT_REACT_FILES: SandpackBundlerFiles = {
   "/App.jsx": {
