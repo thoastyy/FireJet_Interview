@@ -59,7 +59,6 @@ async function main() {
     });
     // 2. Traverse to find all the template literals prefixed with /*tsx*/
     let templateLiteralNodes = []; // store all the nodes of type TemplateLiteral here
-    let result = []; // store all the strings
     traverse(ast, {
         enter(path) {
             if (path.isTemplateLiteral()) {
@@ -73,20 +72,15 @@ async function main() {
     for (const node of templateLiteralNodes) {
         // Get string location using node.start and node.end 
         // https://stackoverflow.com/questions/61325886/how-to-get-code-as-a-string-from-babel-node-during-traverse
-        try {
-            const originalCodeChunk = file.slice(node.start + 1, node.end - 1);
-            const postLint = await lint(originalCodeChunk);
-            pairs.push({
-                originalCode: originalCodeChunk,
-                postLinted: postLint
-            });
-        }
-        catch (error) {
-            return error instanceof Error ? "Failed to extract or lint.: " + error.message : "Failed to extract or lint.";
-        }
-        for (let i = 0; i < pairs.length; i++) {
-            file = file.replace(pairs[i].originalCode, pairs[i].postLinted);
-        }
+        const originalCodeChunk = file.slice(node.start + 1, node.end - 1);
+        const postLint = await lint(originalCodeChunk);
+        pairs.push({
+            originalCode: originalCodeChunk,
+            postLinted: postLint
+        });
+    }
+    for (let i = 0; i < pairs.length; i++) {
+        file = file.replace(pairs[i].originalCode, pairs[i].postLinted);
     }
     fs.writeFileSync("output/output.txt", file);
 }
